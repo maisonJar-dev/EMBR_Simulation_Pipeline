@@ -1,1 +1,8 @@
+# Local environment configuration
 .env
+
+# Generated mechanical reports
+mechanical_reports/*
+!mechanical_reports/.gitkeep
+
+
