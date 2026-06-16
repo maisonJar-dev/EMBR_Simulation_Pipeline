@@ -1,3 +1,8 @@
 #!/bin/bash
 
-echo "hello, world!"
+bar
+
+info "Starting Linux Bootstrap"
+info "Checking for Major Dependencies"
+
+bar
