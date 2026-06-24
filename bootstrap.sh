@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e          # stop on unhandled command failure
+set -u          # error on unset variables
+set -o pipefail # fail a pipeline if any command in it fails
+
 # ========================
 #       Info Helpers
 # ========================
@@ -11,29 +15,12 @@ source scripts/environment/info_helpers.sh
 source scripts/environment/logo.sh
 
 # ========================
-#       CHECK OS
+#       Setup Init
 # ========================
 bar
-info "Checking OS"
 
-
-if [[ -f /etc/os-release ]]; then 
-    # Get Appropriate Variables
-    source /etc/os-release
-
-    echo "System: $NAME"
-    echo "Version: $VERSION"
-    
-    if [[ "$ID" == "ubuntu" && "$VERSION_ID=" != "22.04" ]]; then
-        success "Ubuntu 22.04 detected. ROS2 Humble is supported."
-        source scripts/environment/bootstrap_linux.sh
-    else
-        info "Ubutuntu 22.04 not detected. Entering Container."  
-        source scripts/environment/setup_docker.sh
-    fi
-else 
-    error "This System does not provide /etc/os-release."
-fi
+info "SETUP INITIALIZED"
+source scripts/environment/setup_docker.sh
 
 bar
 
