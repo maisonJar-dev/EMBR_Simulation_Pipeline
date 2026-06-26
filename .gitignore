@@ -4,3 +4,8 @@
 # Generated mechanical reports
 mechanical_reports/*
 !mechanical_reports/.gitkeep
+
+# ros2_ws workspace artifacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/ 
