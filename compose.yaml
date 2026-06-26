@@ -1,0 +1,120 @@
+services:
+
+  # MARK: NVIDIA O.N.S
+  # Simulates Embr with computing constraints of the Nvidia Orin Nano Super
+  nvidia-orin-nano-super-sim:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: embr-bot:orin-nano-super-sim
+    container_name: embr-bot-orin-nano-super
+    hostname: embr-orin-nano-super
+    
+    # Interactive terminal
+    stdin_open: true
+    tty: true
+    
+    # Environment variables
+    environment:
+      - ROS_DOMAIN_ID=0
+    
+    # Mount workspace for live development (optional)
+    volumes:
+      - ./ros2_ws:/workspace/ros2_ws:rw
+    
+    # Network configuration
+    network_mode: host
+    
+    # Resource limits (simulating Nvidia Orin Nano Super)
+    deploy:
+      resources:
+        limits:
+          cpus: '6.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
+    
+    # Keep container running
+    command: /bin/bash
+
+  # MARK: MTS
+  # Service for running tests specific to our MTS (Mechanical Testing Suite)
+  mechanical-reports:
+    build: 
+      context: . 
+      dockerfile: docker/Dockerfile
+    image: embr-bot:mts-dev
+    container_name: embr-bot-mts
+    hostname: embr-mts
+
+    # Interactive Terminal
+    stdin_open: true
+    tty: true
+
+    # Environment Variables
+    environment:
+      - ROS_DOMAIN_ID=0
+    
+    volumes:
+      - ./ros2_ws:/workspace/ros2_ws:rw
+    
+    # Network Configuration
+    network_mode: host
+
+    # Keep container running
+    command: /bin/bash
+  
+  # MARK: Cntrl Systms
+  # Control System Service
+  control-systems-dev:
+    build: 
+      context: . 
+      dockerfile: docker/Dockerfile
+    image: embr-bot:control-systems-dev
+    container_name: embr-bot-control-systems
+    hostname: embr-control-systems
+
+    # Interactive Terminal
+    stdin_open: true
+    tty: true
+
+    # Environment Variables
+    environment:
+      - ROS_DOMAIN_ID=0
+    
+    volumes:
+      - ./ros2_ws:/workspace/ros2_ws:rw
+    
+    # Network Configuration
+    network_mode: host
+
+    # Keep container running
+    command: /bin/bash
+
+  # MARK: PPO
+  # PPO Reinforcement Learning Service
+  ppo-dev:
+    build: 
+      context: . 
+      dockerfile: docker/Dockerfile
+    image: embr-bot:ppo-dev
+    container_name: embr-bot-ppo
+    hostname: embr-ppo
+
+    # Interactive Terminal
+    stdin_open: true
+    tty: true
+
+    # Environment Variables
+    environment:
+      - ROS_DOMAIN_ID=0
+    
+    volumes:
+      - ./ros2_ws:/workspace/ros2_ws:rw
+    
+    # Network Configuration
+    network_mode: host
+
+    # Keep container running
+    command: /bin/bash

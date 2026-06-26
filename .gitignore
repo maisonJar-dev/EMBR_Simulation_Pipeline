@@ -4,5 +4,3 @@
 # Generated mechanical reports
 mechanical_reports/*
 !mechanical_reports/.gitkeep
-
-
