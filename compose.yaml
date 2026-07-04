@@ -73,7 +73,7 @@ services:
       context: . 
       dockerfile: docker/Gazebo-Dockerfile
       args: 
-        USERNAME: gz
+        USERNAME: ${USER}
     image: embr-bot:control-systems-dev
     container_name: embr-bot-control-systems
     hostname: embr-control-systems
@@ -82,13 +82,27 @@ services:
     stdin_open: true
     tty: true
 
+    devices:
+      - /dev/dri:/dev/dri
+
+    # TODO: Make this modular for other machines GID's
+    group_add:
+      - video
+      - render
+
     # Environment Variables
     environment:
       - ROS_DOMAIN_ID=0
-      - USERNAME=gz
+      - USERNAME=${USER}
+      - DISPLAY=${DISPLAY}
+      - QT_QPA_PLATFORM=xcb
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/tmp/.docker-xauthority
     
     volumes:
       - ./ros2_ws:/workspace/ros2_ws:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${XAUTHORITY}:/tmp/.docker-xauthority:ro
     
     # Network Configuration
     network_mode: host
