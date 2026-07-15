@@ -11,6 +11,7 @@ ENV ROS_DISTRO=humble
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV PYTHONUNBUFFERED=1
+ENV ROS_WS=/workspace/ros2_ws
 
 # Use bash instead of default shell
 SHELL ["/bin/bash", "-c"]
@@ -68,7 +69,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Gazebo Sim Fortress (LTS)
-RUN sudo apt-get update && sudo apt-get install -y \
+RUN apt-get update && apt-get install -y \
     ignition-fortress \
     && rm -rf /var/lib/apt/lists/*
 
@@ -101,15 +102,18 @@ RUN mkdir -p /run/user/$USER_UID && \
 ENV XDG_RUNTIME_DIR=/run/user/$USER_UID
 
 # Create workspace directory
-WORKDIR /home/$USERNAME
+RUN mkdir -p /workspace
+WORKDIR /workspace
 
 # Copy the ROS2 workspace
-COPY ros2_ws /home/$USERNAME/ros2_ws
+COPY ros2_ws ${ROS_WS}
 
 
 # Build the workspace
-RUN echo "source /opt/ros/humble/setup.bash && \
-    colcon build --symlink-install"
+RUN mkdir -p ${ROS_WS}/src && \
+    source /opt/ros/humble/setup.bash && \
+    cd ${ROS_WS} && \
+    colcon build --symlink-install
 
 # Copy Helpful Scripts
 RUN mkdir -p /home/$USERNAME/scripts/environment \
@@ -122,7 +126,8 @@ RUN chmod +x /home/$USERNAME/scripts/simulation/cad_to_urdf.sh
 
 # Set entrypoint
 COPY entrypoint.sh /entrypoint.sh
-RUN sudo chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh && \
+    chown -R $USERNAME:$USERNAME /workspace
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 CMD ["/bin/bash"]
 
