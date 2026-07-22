@@ -1,5 +1,47 @@
 services:
 
+  # MARK: CANopen
+  # Isolated ROS 2 CANopen and Gazebo simulation environment
+  canopen-sim:
+    build:
+      context: .
+      dockerfile: docker/CANopen-Spec-Dockerfile
+    image: embr-bot:canopen-sim
+    container_name: embr-bot-canopen-sim
+    hostname: embr-canopen-sim
+
+    stdin_open: true
+    tty: true
+
+    # Pass both Intel and NVIDIA DRM render nodes through to Gazebo. The
+    # container runs as root, so host-specific named groups are not required.
+    devices:
+      - /dev/dri:/dev/dri
+
+    # Allows the container to create/configure vcan0 when required.
+    cap_add:
+      - NET_ADMIN
+
+    environment:
+      - ROS_DOMAIN_ID=0
+      - CANOPEN_WS=/workspace/canopen_ws
+      - CAN_INTERFACE=${CAN_INTERFACE:-vcan0}
+      - DISPLAY=${DISPLAY}
+      - QT_QPA_PLATFORM=xcb
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/tmp/.docker-xauthority
+
+    volumes:
+      - ./embr_sim/canopen_ws:/workspace/canopen_ws:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY}:/tmp/.docker-xauthority:ro
+
+    # ROS 2 discovery and SocketCAN interfaces are shared with the host.
+    network_mode: host
+    ipc: host
+
+    command: bash
+
   # MARK: NVIDIA O.N.S
   # Simulates Embr with computing constraints of the Nvidia Orin Nano Super
   nvidia-orin-nano-super-sim:

@@ -1,0 +1,42 @@
+# Dedicated ROS 2 Humble environment for CANopen simulation.
+FROM ros:humble-ros-base-jammy
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    ROS_DISTRO=humble \
+    CANOPEN_WS=/workspace/canopen_ws
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        can-utils \
+        git \
+        iproute2 \
+        python3-colcon-common-extensions \
+        python3-rosdep \
+        ros-humble-canopen \
+        ros-humble-canopen-fake-slaves \
+        ros-humble-canopen-ros2-control \
+        ros-humble-canopen-ros2-controllers \
+        ros-humble-ros-gz \
+        ros-humble-ros2-control \
+        ros-humble-ros2-controllers \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR ${CANOPEN_WS}
+
+# Cache dependency installation and an initial build. The Compose bind mount
+# replaces this copy during development and the entrypoint rebuilds as needed.
+COPY embr_sim/canopen_ws/ ${CANOPEN_WS}/
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
+    && rosdep install --from-paths ${CANOPEN_WS} --ignore-src -r -y \
+    && colcon build --symlink-install
+
+COPY docker/canopen-entrypoint.sh /canopen-entrypoint.sh
+RUN chmod +x /canopen-entrypoint.sh
+
+ENTRYPOINT ["/canopen-entrypoint.sh"]
+CMD ["bash"]
+
+LABEL maintainer="Maison Gulyas" \
+      description="EMBR CANopen simulation environment" \
+      version="1.0"

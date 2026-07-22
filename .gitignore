@@ -8,4 +8,9 @@ mechanical_reports/*
 # ros2_ws workspace artifacts
 ros2_ws/build/
 ros2_ws/install/
-ros2_ws/log/ 
+ros2_ws/log/
+
+# CANopen workspace artifacts
+embr_sim/canopen_ws/build/
+embr_sim/canopen_ws/install/
+embr_sim/canopen_ws/log/
