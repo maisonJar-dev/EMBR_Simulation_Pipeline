@@ -9,7 +9,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://maxon_motor/meshes/Body.stl" scale="1 1 1" />
+                <mesh filename="package://embr_description/meshes/maxon_motor/meshes/Body.stl" scale="1 1 1" />
             </geometry>
             <material name="0.501961_0.501961_0.501961_0.000000_0.000000">
                 <color rgba="0.501961 0.501961 0.501961 1" />
@@ -26,7 +26,7 @@
         <visual>
             <origin xyz="0 0.0204 -9.093e-19" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://maxon_motor/meshes/Shaft.stl" scale="1 1 1" />
+                <mesh filename="package://embr_description/meshes/maxon_motor/meshes/Shaft.stl" scale="1 1 1" />
             </geometry>
             <material name="0.901961_0.901961_0.901961_0.000000_0.000000">
                 <color rgba="0.901961 0.901961 0.901961 1" />
@@ -42,7 +42,7 @@
         <visual>
             <origin xyz="8.67362e-19 -0.0133 3.18908e-19" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://maxon_motor/meshes/Tab_1.stl" scale="1 1 1" />
+                <mesh filename="package://embr_description/meshes/maxon_motor/meshes/Tab_1.stl" scale="1 1 1" />
             </geometry>
             <material name="0.917647_0.917647_0.917647_0.000000_0.000000">
                 <color rgba="0.917647 0.917647 0.917647 1" />
@@ -58,7 +58,7 @@
         <visual>
             <origin xyz="-8.67362e-19 -0.0133 3.08814e-19" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://maxon_motor/meshes/Tab_2.stl" scale="1 1 1" />
+                <mesh filename="package://embr_description/meshes/maxon_motor/meshes/Tab_2.stl" scale="1 1 1" />
             </geometry>
             <material name="0.917647_0.917647_0.917647_0.000000_0.000000">
                 <color rgba="0.917647 0.917647 0.917647 1" />
