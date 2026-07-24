@@ -6,15 +6,19 @@ services:
     build:
       context: .
       dockerfile: docker/CANopen-Spec-Dockerfile
+      args:
+        USERNAME: ${CONTAINER_USER:-embr}
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
     image: embr-bot:canopen-sim
     container_name: embr-bot-canopen-sim
     hostname: embr-canopen-sim
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
 
     stdin_open: true
     tty: true
 
-    # Pass both Intel and NVIDIA DRM render nodes through to Gazebo. The
-    # container runs as root, so host-specific named groups are not required.
+    # Pass both Intel and NVIDIA DRM render nodes through to Gazebo.
     devices:
       - /dev/dri:/dev/dri
 
@@ -32,7 +36,7 @@ services:
       - XAUTHORITY=/tmp/.docker-xauthority
 
     volumes:
-      - ./embr_sim/canopen_ws:/workspace/canopen_ws:rw
+      - ./embr_sim/ros2_ws:/workspace/canopen_ws:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${XAUTHORITY}:/tmp/.docker-xauthority:ro
 
@@ -48,9 +52,14 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        USERNAME: ${CONTAINER_USER:-embr}
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
     image: embr-bot:orin-nano-super-sim
     container_name: embr-bot-orin-nano-super
     hostname: embr-orin-nano-super
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     
     # Interactive terminal
     stdin_open: true
@@ -86,9 +95,14 @@ services:
     build: 
       context: . 
       dockerfile: docker/Dockerfile
+      args:
+        USERNAME: ${CONTAINER_USER:-embr}
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
     image: embr-bot:mts-dev
     container_name: embr-bot-mts
     hostname: embr-mts
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
 
     # Interactive Terminal
     stdin_open: true
@@ -115,10 +129,13 @@ services:
       context: . 
       dockerfile: docker/Gazebo-Dockerfile
       args: 
-        USERNAME: ${USER}
+        USERNAME: ${CONTAINER_USER:-embr}
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
     image: embr-bot:control-systems-dev
     container_name: embr-bot-control-systems
     hostname: embr-control-systems
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
 
     # Interactive Terminal
     stdin_open: true
@@ -135,7 +152,7 @@ services:
     # Environment Variables
     environment:
       - ROS_DOMAIN_ID=0
-      - USERNAME=${USER}
+      - USERNAME=${CONTAINER_USER:-embr}
       - DISPLAY=${DISPLAY}
       - QT_QPA_PLATFORM=xcb
       - QT_X11_NO_MITSHM=1
@@ -158,9 +175,14 @@ services:
     build: 
       context: . 
       dockerfile: docker/Dockerfile
+      args:
+        USERNAME: ${CONTAINER_USER:-embr}
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
     image: embr-bot:ppo-dev
     container_name: embr-bot-ppo
     hostname: embr-ppo
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
 
     # Interactive Terminal
     stdin_open: true

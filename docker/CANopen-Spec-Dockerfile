@@ -7,6 +7,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 SHELL ["/bin/bash", "-c"]
 
+ARG USERNAME=embr
+ARG USER_UID=1000
+ARG USER_GID=1000
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         can-utils \
         git \
@@ -22,18 +26,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-ros2-controllers \
     && rm -rf /var/lib/apt/lists/*
 
+RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
+    && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home \
+        --shell /bin/bash "${USERNAME}"
+
 WORKDIR ${CANOPEN_WS}
 
 # Cache dependency installation and an initial build. The Compose bind mount
 # replaces this copy during development and the entrypoint rebuilds as needed.
-COPY embr_sim/canopen_ws/ ${CANOPEN_WS}/
+COPY --chown=${USER_UID}:${USER_GID} embr_sim/ros2_ws/ ${CANOPEN_WS}/
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
     && rosdep install --from-paths ${CANOPEN_WS} --ignore-src -r -y \
-    && colcon build --symlink-install
+    && colcon build --symlink-install \
+    && chown -R "${USER_UID}:${USER_GID}" "${CANOPEN_WS}"
 
 COPY docker/canopen-entrypoint.sh /canopen-entrypoint.sh
 RUN chmod +x /canopen-entrypoint.sh
 
+USER ${USERNAME}
 ENTRYPOINT ["/canopen-entrypoint.sh"]
 CMD ["bash"]
 
