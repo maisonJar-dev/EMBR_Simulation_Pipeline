@@ -51,33 +51,39 @@ docker compose exec canopen-sim bash
 The following commands in this document run inside the container:
 
 ```bash
-cd /workspace/canopen_ws
 source /opt/ros/humble/setup.bash
 ```
 
-## Build the workspace
+## Build the workspaces
 
 For normal development:
 
 ```bash
+cd /workspace/embr_phys_ws
 colcon build --symlink-install
-source install/setup.bash
+source /workspace/embr_phys_ws/install/setup.bash
+cd /workspace/embr_sim_ws
+colcon build --symlink-install
+source /workspace/embr_sim_ws/install/setup.bash
 ```
 
 To build only the model package:
 
 ```bash
+cd /workspace/embr_phys_ws
 colcon build --symlink-install --packages-select embr_description
-source install/setup.bash
+source /workspace/embr_phys_ws/install/setup.bash
 ```
 
 Use `--cmake-clean-cache` after changing package names, CMake configuration, or
 build dependencies:
 
 ```bash
+cd /workspace/embr_phys_ws
 colcon build --symlink-install \
   --packages-select embr_description \
   --cmake-clean-cache
+source /workspace/embr_phys_ws/install/setup.bash
 ```
 
 ## View the Maxon motor
@@ -99,12 +105,13 @@ This starts RViz and the joint-state GUI. In RViz:
 Source and mesh files are edited on the host under:
 
 ```text
-embr_sim/ros2_ws/src
+embr_phys/ros2_ws/src   Hardware-neutral descriptions and robot packages
+embr_sim/ros2_ws/src    Gazebo and simulated-device packages
 ```
 
-Because the workspace is bind-mounted, changes are immediately visible inside
-the container. Re-run `colcon build --symlink-install`, source
-`install/setup.bash`, and restart the affected launch file.
+Because both workspaces are bind-mounted, changes are immediately visible
+inside the container. Build and source the physical underlay before the
+simulation overlay, then restart the affected launch file.
 
 A Docker image rebuild is not normally required for source, launch, URDF,
 mesh, RViz, or YAML edits.
@@ -126,14 +133,14 @@ docker compose down
 Files created in the workspace should match the host UID/GID. Verify with:
 
 ```bash
-stat -c '%U:%G %n' embr_sim/ros2_ws
+stat -c '%U:%G %n' embr_phys/ros2_ws embr_sim/ros2_ws
 ```
 
 If files left by an older root-running container have incorrect ownership,
 repair them once from the host:
 
 ```bash
-sudo chown -R "$(id -u):$(id -g)" embr_sim/ros2_ws
+sudo chown -R "$(id -u):$(id -g)" embr_phys/ros2_ws embr_sim/ros2_ws
 ```
 
 Do not run the service as root to work around workspace permissions.

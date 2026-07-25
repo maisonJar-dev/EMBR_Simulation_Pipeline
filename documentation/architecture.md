@@ -12,20 +12,19 @@ contains scaffolding for simulated CANopen motor behavior.
 
 ```text
 Host repository
+├── embr_phys/ros2_ws
+│   └── src
+│       └── embr_description     Maxon URDF, meshes, RViz, and launch files
 └── embr_sim/ros2_ws
     └── src
-        ├── embr_description      Maxon URDF, meshes, RViz, and launch files
         ├── embr_canopen_sim     CANopen simulation scaffold
         └── embr_gazebo          Gazebo resources scaffold
-              │
-              │ bind mount
-              ▼
+                  │
+                  │ bind mounts
+                  ▼
 CANopen container
-└── /workspace/canopen_ws
-    ├── src
-    ├── build
-    ├── install
-    └── log
+├── /workspace/embr_phys_ws      ROS underlay
+└── /workspace/embr_sim_ws       ROS overlay
 ```
 
 ## Container boundary
@@ -50,21 +49,23 @@ defaults do not match the host.
 
 ## ROS workspace
 
-The host directory `embr_sim/ros2_ws` is mounted at
-`/workspace/canopen_ws`. Consequently, `colcon` creates `build`, `install`, and
-`log` on the host. These are generated workspace artifacts and are excluded
-from the Docker build context.
+The host directories `embr_phys/ros2_ws` and `embr_sim/ros2_ws` are mounted at
+`/workspace/embr_phys_ws` and `/workspace/embr_sim_ws`. The physical workspace
+is built and sourced as an underlay before the simulation overlay. Consequently,
+`colcon` creates `build`, `install`, and `log` in each host workspace. These
+generated artifacts are excluded from the Docker build context.
 
-The image build copies only `embr_sim/ros2_ws/src`. It installs declared
-dependencies with `rosdep` and performs an initial build to catch package
-errors. At runtime, the bind mount replaces the image workspace with the live
-host workspace.
+The image build copies only each workspace's `src` directory. It installs
+declared dependencies with `rosdep` and builds both workspaces in underlay then
+overlay order. At runtime, the bind mounts replace the image workspaces with
+the live host workspaces.
 
 ## Package responsibilities
 
 ### `embr_description`
 
-Owns geometry and visualization resources:
+Lives in `embr_phys/ros2_ws/src` and owns hardware-neutral geometry and
+visualization resources:
 
 - Maxon motor Xacro/URDF
 - STL meshes

@@ -1,7 +1,7 @@
 services:
 
   # MARK: CANopen
-  # Isolated ROS 2 CANopen and Gazebo simulation environment
+  # ROS 2 CANopen simulation with the physical description as an underlay.
   canopen-sim:
     build:
       context: .
@@ -28,7 +28,8 @@ services:
 
     environment:
       - ROS_DOMAIN_ID=0
-      - CANOPEN_WS=/workspace/canopen_ws
+      - EMBR_PHYS_WS=/workspace/embr_phys_ws
+      - EMBR_SIM_WS=/workspace/embr_sim_ws
       - CAN_INTERFACE=${CAN_INTERFACE:-vcan0}
       - DISPLAY=${DISPLAY}
       - QT_QPA_PLATFORM=xcb
@@ -36,7 +37,8 @@ services:
       - XAUTHORITY=/tmp/.docker-xauthority
 
     volumes:
-      - ./embr_sim/ros2_ws:/workspace/canopen_ws:rw
+      - ./embr_phys/ros2_ws:/workspace/embr_phys_ws:rw
+      - ./embr_sim/ros2_ws:/workspace/embr_sim_ws:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${XAUTHORITY}:/tmp/.docker-xauthority:ro
 

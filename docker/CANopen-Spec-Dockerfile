@@ -3,7 +3,8 @@ FROM ros:humble-ros-base-jammy
 
 ENV DEBIAN_FRONTEND=noninteractive \
     ROS_DISTRO=humble \
-    CANOPEN_WS=/workspace/canopen_ws
+    EMBR_PHYS_WS=/workspace/embr_phys_ws \
+    EMBR_SIM_WS=/workspace/embr_sim_ws
 
 SHELL ["/bin/bash", "-c"]
 
@@ -35,15 +36,20 @@ RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
     && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home \
         --shell /bin/bash "${USERNAME}"
 
-WORKDIR ${CANOPEN_WS}
+WORKDIR /workspace
 
 # Cache dependency installation and validate an initial build. Copy only source
 # packages so host-generated build/install/log artifacts never enter the image.
-COPY --chown=${USER_UID}:${USER_GID} embr_sim/ros2_ws/src/ ${CANOPEN_WS}/src/
+COPY --chown=${USER_UID}:${USER_GID} embr_phys/ros2_ws/src/ ${EMBR_PHYS_WS}/src/
+COPY --chown=${USER_UID}:${USER_GID} embr_sim/ros2_ws/src/ ${EMBR_SIM_WS}/src/
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
-    && rosdep install --from-paths ${CANOPEN_WS}/src --ignore-src -r -y \
+    && rosdep install --from-paths ${EMBR_PHYS_WS}/src ${EMBR_SIM_WS}/src --ignore-src -r -y \
+    && cd ${EMBR_PHYS_WS} \
     && colcon build --symlink-install \
-    && chown -R "${USER_UID}:${USER_GID}" "${CANOPEN_WS}"
+    && source ${EMBR_PHYS_WS}/install/setup.bash \
+    && cd ${EMBR_SIM_WS} \
+    && colcon build --symlink-install \
+    && chown -R "${USER_UID}:${USER_GID}" ${EMBR_PHYS_WS} ${EMBR_SIM_WS}
 
 COPY docker/canopen-entrypoint.sh /canopen-entrypoint.sh
 RUN chmod +x /canopen-entrypoint.sh
@@ -53,5 +59,5 @@ ENTRYPOINT ["/canopen-entrypoint.sh"]
 CMD ["bash"]
 
 LABEL maintainer="Maison Gulyas" \
-      description="EMBR CANopen simulation environment" \
+      description="EMBR physical-description and CANopen simulation environment" \
       version="1.0"

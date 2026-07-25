@@ -22,12 +22,13 @@ compose.yaml
 docker/
 ├── CANopen-Spec-Dockerfile
 └── canopen-entrypoint.sh
-embr_sim/ros2_ws/src/
-├── embr_description/
+embr_phys/ros2_ws/src/
+└── embr_description/
 │   ├── launch/view_maxon_motor.launch.py
 │   ├── meshes/maxon_motor/meshes/*.stl
 │   ├── rviz/maxon_motor.rviz
 │   └── urdf/maxon_motor/urdf/maxon_motor.urdf.xacro
+embr_sim/ros2_ws/src/
 ├── embr_canopen_sim/
 │   ├── config/motor_nodes.yaml
 │   ├── launch/canopen_sim.launch.py
@@ -52,10 +53,13 @@ docker compose exec canopen-sim bash
 Inside the container:
 
 ```bash
-cd /workspace/canopen_ws
 source /opt/ros/humble/setup.bash
-colcon build --symlink-install --packages-select embr_description
-source install/setup.bash
+cd /workspace/embr_phys_ws
+colcon build --symlink-install
+source /workspace/embr_phys_ws/install/setup.bash
+cd /workspace/embr_sim_ws
+colcon build --symlink-install
+source /workspace/embr_sim_ws/install/setup.bash
 ros2 launch embr_description view_maxon_motor.launch.py
 ```
 
@@ -68,7 +72,8 @@ The service uses:
 
 | Interface | Purpose |
 | --- | --- |
-| `/workspace/canopen_ws` | Container workspace bind-mounted from `embr_sim/ros2_ws` |
+| `/workspace/embr_phys_ws` | Physical underlay bind-mounted from `embr_phys/ros2_ws` |
+| `/workspace/embr_sim_ws` | Simulation overlay bind-mounted from `embr_sim/ros2_ws` |
 | `/tmp/.X11-unix` | X11 socket used by RViz and Gazebo |
 | `XAUTHORITY` | Host X11 authorization file |
 | `CAN_INTERFACE` | SocketCAN interface name; defaults to `vcan0` |
@@ -117,8 +122,9 @@ Running `colcon build` creates:
 - `install/`: installed packages and ROS environment hooks
 - `log/`: build logs
 
-They appear in `embr_sim/ros2_ws` because it is a bind mount. This is expected.
-They are generated artifacts and should not be committed.
+They appear in `embr_phys/ros2_ws` and `embr_sim/ros2_ws` because those
+directories are bind mounts. This is expected. They are generated artifacts
+and should not be committed.
 
 ## Rebuild rules
 
@@ -188,5 +194,5 @@ Confirm the Compose service uses the host UID/GID and repair artifacts left by
 older root-running containers:
 
 ```bash
-sudo chown -R "$(id -u):$(id -g)" embr_sim/ros2_ws
+sudo chown -R "$(id -u):$(id -g)" embr_phys/ros2_ws embr_sim/ros2_ws
 ```
