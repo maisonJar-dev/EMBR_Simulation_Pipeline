@@ -12,3 +12,7 @@ embr_sim/ros2_ws/log/
 embr_phys/ros2_ws/build/
 embr_phys/ros2_ws/install/
 embr_phys/ros2_ws/log/
+
+# Ignore local python caching
+__pycache__/
+  *.py[cod]
