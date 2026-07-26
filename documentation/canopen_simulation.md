@@ -45,9 +45,9 @@ embr_sim/ros2_ws/src/
 From the repository root:
 
 ```bash
-docker compose build canopen-sim &&
-docker compose up -d --force-recreate canopen-sim
-docker compose exec canopen-sim bash
+docker compose -f compose.linux.yaml build canopen-sim &&
+docker compose -f compose.linux.yaml up -d --force-recreate canopen-sim
+docker compose -f compose.linux.yaml exec canopen-sim bash
 ```
 
 Inside the container:

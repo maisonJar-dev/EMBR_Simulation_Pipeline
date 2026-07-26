@@ -1,0 +1,2 @@
+# TODO: Create compose file windows specific that is referenced from the linux version
+# For now only focus on the CANopen service, also make a new Dockerfile if needed.
