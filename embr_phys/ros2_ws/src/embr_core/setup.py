@@ -23,7 +23,7 @@ setup(
     license="Apache-2.0",
     entry_points={
         "console_scripts": [
-            "teleoperation = embr_core.teleoperation:main",
+            "teleoperation = embr.node_teleoperation:main",
         ],
     },
 )
