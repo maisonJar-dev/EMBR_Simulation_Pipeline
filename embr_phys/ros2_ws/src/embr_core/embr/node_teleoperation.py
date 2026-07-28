@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+# TODO: CREATE SIM AND REAL CLASSES
+"""
+    Sim class should take logic from the contoller Node located in embr_sim workspace,
+    from there send the proper CANopen command and simulate moving the Maxon motors. 
+    Priority List:
+        1. Creat sim logic for virtual CANopen & a blank real class
+        2. Test receiving command from controller node and sending on virtual-CANopen (should be able to see desired output somewhere)
+        3. Visualize in Gazebo
+""" 
+
 import rclpy
 from rclpy.node import Node
 
