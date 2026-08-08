@@ -42,3 +42,21 @@ Channel indexes are zero-based. Other parameters include `channel_min`,
 `channel_center`, `channel_max`, `deadband`, `invert_forward`, `invert_turn`, and
 `frame_timeout`. Keep the wheels clear of the ground while confirming channel
 order, direction, and failsafe behavior.
+
+## Terminal simulation mode
+
+To publish commands without an iBUS receiver or serial port, run:
+
+```sh
+ros2 run embr_core teleoperation --sim
+```
+
+The `-sim` spelling is also accepted. Press `W`/`S` to increment or decrement
+forward motion, `A`/`D` to increment or decrement turning, space to stop, and `Q`
+to stop and exit. Commands use the same `motor_velocity_levels` and
+`forward_turn_velocity` topics as hardware mode. The increment defaults to `0.1`
+and can be changed with, for example:
+
+```sh
+ros2 run embr_core teleoperation --sim --ros-args -p sim_step:=0.25
+```

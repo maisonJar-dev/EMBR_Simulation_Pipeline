@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Read an iBUS RC receiver and publish four Maxon drivetrain levels."""
+"""Publish drivetrain levels from an iBUS receiver or terminal controls."""
+# TODO: Refactor with a class for sim mode and a class for real mode. Current setup is a quick solution. 
 
+import select
+import sys
 import time
 from typing import Optional
 
@@ -12,14 +15,17 @@ from embr.embr_hardware.ibus import (
     ChannelCalibration,
     IBusStreamDecoder,
     channels_to_drive,
+    mix_four_motor_levels,
 )
 
 
 class Teleoperation(Node):
     """ROS 2 node responsible for EMBR teleoperation."""
 
-    def __init__(self) -> None:
+    def __init__(self, simulation: bool = False) -> None:
         super().__init__("teleoperation")
+        self._simulation = simulation
+        self._terminal_settings = None
         self.declare_parameter("serial_port", "/dev/serial0")
         self.declare_parameter("baud_rate", 115200)
         self.declare_parameter("forward_channel", 1)
@@ -32,6 +38,7 @@ class Teleoperation(Node):
         self.declare_parameter("invert_turn", False)
         self.declare_parameter("frame_timeout", 0.25)
         self.declare_parameter("poll_period", 0.01)
+        self.declare_parameter("sim_step", 0.1)
 
         self._forward_channel = int(self.get_parameter("forward_channel").value)
         self._turn_channel = int(self.get_parameter("turn_channel").value)
@@ -50,16 +57,76 @@ class Teleoperation(Node):
         self._command_publisher = self.create_publisher(
             Float32MultiArray, "forward_turn_velocity", 10
         )
-        self._decoder = IBusStreamDecoder()
-        self._last_frame_time: Optional[float] = None
-        self._failsafe_published = False
-        self._serial = self._open_serial()
-        self._timer = self.create_timer(
-            float(self.get_parameter("poll_period").value), self._poll_receiver
-        )
+        poll_period = float(self.get_parameter("poll_period").value)
+        if self._simulation:
+            self._sim_forward = 0.0
+            self._sim_turn = 0.0
+            self._sim_step = float(self.get_parameter("sim_step").value)
+            if not 0.0 < self._sim_step <= 1.0:
+                raise ValueError("sim_step must be in the range (0, 1]")
+            self._configure_terminal()
+            self._timer = self.create_timer(poll_period, self._poll_terminal)
+            self._publish_sim_command()
+            self.get_logger().info(
+                "Simulation teleoperation started: W/S forward, A/D turn, "
+                "space stop, Q quit"
+            )
+        else:
+            self._decoder = IBusStreamDecoder()
+            self._last_frame_time: Optional[float] = None
+            self._failsafe_published = False
+            self._serial = self._open_serial()
+            self._timer = self.create_timer(poll_period, self._poll_receiver)
+            self.get_logger().info(
+                "iBUS teleoperation started; publishing motor order "
+                "[front_left, rear_left, front_right, rear_right]"
+            )
+
+    def _configure_terminal(self) -> None:
+        """Use single-key input when attached to an interactive terminal."""
+        if not sys.stdin.isatty():
+            self.get_logger().warn(
+                "stdin is not a terminal; commands will be read as they become available"
+            )
+            return
+
+        import termios
+        import tty
+
+        self._terminal_settings = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin.fileno())
+
+    def _poll_terminal(self) -> None:
+        while select.select([sys.stdin], [], [], 0.0)[0]:
+            key = sys.stdin.read(1).lower()
+            if not key:
+                return
+            if key == "w":
+                self._sim_forward = min(1.0, self._sim_forward + self._sim_step)
+            elif key == "s":
+                self._sim_forward = max(-1.0, self._sim_forward - self._sim_step)
+            elif key == "a":
+                self._sim_turn = max(-1.0, self._sim_turn - self._sim_step)
+            elif key == "d":
+                self._sim_turn = min(1.0, self._sim_turn + self._sim_step)
+            elif key == " ":
+                self._sim_forward = 0.0
+                self._sim_turn = 0.0
+            elif key == "q":
+                self._sim_forward = 0.0
+                self._sim_turn = 0.0
+                self._publish_sim_command()
+                rclpy.shutdown()
+                return
+            else:
+                continue
+            self._publish_sim_command()
+
+    def _publish_sim_command(self) -> None:
+        motors = mix_four_motor_levels(self._sim_forward, self._sim_turn)
+        self._publish(self._sim_forward, self._sim_turn, motors)
         self.get_logger().info(
-            "iBUS teleoperation started; publishing motor order "
-            "[front_left, rear_left, front_right, rear_right]"
+            f"command: forward={self._sim_forward:+.1f}, turn={self._sim_turn:+.1f}"
         )
 
     def _open_serial(self):
@@ -123,12 +190,24 @@ class Teleoperation(Node):
     def destroy_node(self) -> None:
         if hasattr(self, "_serial") and self._serial.is_open:
             self._serial.close()
+        if self._terminal_settings is not None:
+            import termios
+
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self._terminal_settings)
+            self._terminal_settings = None
         super().destroy_node()
 
 
 def main(args=None) -> None:
-    rclpy.init(args=args)
-    node = Teleoperation()
+    cli_args = list(sys.argv[1:] if args is None else args)
+    simulation = False
+    for flag in ("--sim", "-sim"):
+        while flag in cli_args:
+            cli_args.remove(flag)
+            simulation = True
+
+    rclpy.init(args=cli_args)
+    node = Teleoperation(simulation=simulation)
 
     try:
         rclpy.spin(node)
