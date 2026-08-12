@@ -9,7 +9,7 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, Int32MultiArray
 
 from embr.embr_hardware.ibus import (
     ChannelCalibration,
@@ -26,7 +26,7 @@ class Teleoperation(Node):
         super().__init__("teleoperation")
         self._simulation = simulation
         self._terminal_settings = None
-        self.declare_parameter("serial_port", "/dev/serial0")
+        self.declare_parameter("serial_port", "/dev/ttyAMA1")
         self.declare_parameter("baud_rate", 115200)
         self.declare_parameter("forward_channel", 1)
         self.declare_parameter("turn_channel", 0)
@@ -38,6 +38,7 @@ class Teleoperation(Node):
         self.declare_parameter("invert_turn", False)
         self.declare_parameter("frame_timeout", 0.25)
         self.declare_parameter("poll_period", 0.01)
+        self.declare_parameter("frame_display_period", 0.5)
         self.declare_parameter("sim_step", 0.1)
 
         self._forward_channel = int(self.get_parameter("forward_channel").value)
@@ -57,6 +58,9 @@ class Teleoperation(Node):
         self._command_publisher = self.create_publisher(
             Float32MultiArray, "forward_turn_velocity", 10
         )
+        self._channel_publisher = self.create_publisher(
+            Int32MultiArray, "ibus_channels", 10
+        )
         poll_period = float(self.get_parameter("poll_period").value)
         if self._simulation:
             self._sim_forward = 0.0
@@ -74,11 +78,18 @@ class Teleoperation(Node):
         else:
             self._decoder = IBusStreamDecoder()
             self._last_frame_time: Optional[float] = None
+            self._last_frame_display_time: Optional[float] = None
+            self._frame_display_period = float(
+                self.get_parameter("frame_display_period").value
+            )
+            if self._frame_display_period < 0.0:
+                raise ValueError("frame_display_period must be non-negative")
             self._failsafe_published = False
             self._serial = self._open_serial()
             self._timer = self.create_timer(poll_period, self._poll_receiver)
             self.get_logger().info(
-                "iBUS teleoperation started; publishing motor order "
+                f"iBUS teleoperation started on {self._serial.port} at "
+                f"{self._serial.baudrate} baud; publishing motor order "
                 "[front_left, rear_left, front_right, rear_right]"
             )
 
@@ -174,8 +185,26 @@ class Teleoperation(Node):
             self._invert_forward,
             self._invert_turn,
         )
-        self._last_frame_time = time.monotonic()
+        now = time.monotonic()
+        self._last_frame_time = now
         self._failsafe_published = False
+
+        raw_channels = Int32MultiArray()
+        raw_channels.data = [int(value) for value in channels]
+        self._channel_publisher.publish(raw_channels)
+
+        if (
+            self._last_frame_display_time is None
+            or now - self._last_frame_display_time >= self._frame_display_period
+        ):
+            formatted_channels = ", ".join(
+                f"ch{index + 1}={value}" for index, value in enumerate(channels)
+            )
+            self.get_logger().info(
+                f"iBUS frame: [{formatted_channels}] -> "
+                f"forward={forward:+.3f}, turn={turn:+.3f}"
+            )
+            self._last_frame_display_time = now
         self._publish(forward, turn, motors)
 
     def _publish(self, forward: float, turn: float, motors) -> None:
