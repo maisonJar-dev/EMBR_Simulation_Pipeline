@@ -9,7 +9,9 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray, Int32MultiArray
+from std_msgs.msg import Float32MultiArray, Int32MultiArray, Float64
+
+from embr_interfaces.msg import TeleCmd 
 
 from embr.embr_hardware.ibus import (
     ChannelCalibration,
@@ -52,11 +54,8 @@ class Teleoperation(Node):
             maximum=int(self.get_parameter("channel_max").value),
             deadband=float(self.get_parameter("deadband").value),
         )
-        self._motor_publisher = self.create_publisher(
-            Float32MultiArray, "motor_velocity_levels", 10
-        )
-        self._command_publisher = self.create_publisher(
-            Float32MultiArray, "forward_turn_velocity", 10
+        self._tele_publisher = self.create_publisher(
+            TeleCmd, "tele_cmd", 10
         )
         self._channel_publisher = self.create_publisher(
             Int32MultiArray, "ibus_channels", 10
@@ -135,7 +134,7 @@ class Teleoperation(Node):
 
     def _publish_sim_command(self) -> None:
         motors = mix_four_motor_levels(self._sim_forward, self._sim_turn)
-        self._publish(self._sim_forward, self._sim_turn, motors)
+        self._publish(self._sim_forward, self._sim_turn)
         self.get_logger().info(
             f"command: forward={self._sim_forward:+.1f}, turn={self._sim_turn:+.1f}"
         )
@@ -205,16 +204,13 @@ class Teleoperation(Node):
                 f"forward={forward:+.3f}, turn={turn:+.3f}"
             )
             self._last_frame_display_time = now
-        self._publish(forward, turn, motors)
+        self._publish(forward, turn)
 
-    def _publish(self, forward: float, turn: float, motors) -> None:
-        command = Float32MultiArray()
-        command.data = [float(forward), float(turn)]
-        self._command_publisher.publish(command)
-
-        motor_command = Float32MultiArray()
-        motor_command.data = [float(level) for level in motors]
-        self._motor_publisher.publish(motor_command)
+    def _publish(self, forward: float, turn: float) -> None:
+        command = TeleCmd()
+        command.velocity = forward
+        command.turn = turn
+        self._tele_publisher.publish(command)
 
     def destroy_node(self) -> None:
         if hasattr(self, "_serial") and self._serial.is_open:

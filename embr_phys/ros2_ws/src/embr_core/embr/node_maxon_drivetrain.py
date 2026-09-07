@@ -3,24 +3,25 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float64
+from embr_interfaces.msg import TeleCmd
 
 class MaxonTeleopControlSystem(Node):
 
     def __init__(self):
         super().__init__('maxon_teleop_control_system')
 
-        self._motor_subscriber = self.create_subscription(
-            Float32MultiArray,
-            'forward_turn_velocity',
+        self._tele_subscriber = self.create_subscription(
+            TeleCmd,
+            'tele_cmd',
             self.motor_velocity_callback,
             10
         )
 
-        self._motor_subscriber # Avoid unused variable warning
+        self._tele_subscriber # Avoid unused variable warning
 
     def motor_velocity_callback(self, msg):
-        self.get_logger().info("Motor Commands: %s" % msg.data)
+        self.get_logger().info(f"Velocity: {msg.velocity}, Turn: {msg.turn}")
 
 def main(args=None):
     rclpy.init(args=args)
