@@ -12,7 +12,7 @@ class MaxonTeleopControlSystem(Node):
 
         self._motor_subscriber = self.create_subscription(
             Float32MultiArray,
-            'motor_velocity_levels',
+            'forward_turn_velocity',
             self.motor_velocity_callback,
             10
         )
@@ -20,7 +20,7 @@ class MaxonTeleopControlSystem(Node):
         self._motor_subscriber # Avoid unused variable warning
 
     def motor_velocity_callback(self, msg):
-        self.get_logger().info("Motor velocities: %s" % msg.data)
+        self.get_logger().info("Motor Commands: %s" % msg.data)
 
 def main(args=None):
     rclpy.init(args=args)
