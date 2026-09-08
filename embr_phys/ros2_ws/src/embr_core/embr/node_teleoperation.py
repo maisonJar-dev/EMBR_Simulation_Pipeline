@@ -110,7 +110,9 @@ class Teleoperation(Node):
         while select.select([sys.stdin], [], [], 0.0)[0]:
             key = sys.stdin.read(1).lower()
             if not key:
-                return
+                self._sim_forward = 0.0
+                self._sim_turn = 0.0
+                break
             if key == "w":
                 self._sim_forward = min(1.0, self._sim_forward + self._sim_step)
             elif key == "s":
@@ -131,6 +133,7 @@ class Teleoperation(Node):
             else:
                 continue
             self._publish_sim_command()
+        self._publish(self._sim_forward, self._sim_turn)
 
     def _publish_sim_command(self) -> None:
         motors = mix_four_motor_levels(self._sim_forward, self._sim_turn)
@@ -171,7 +174,7 @@ class Teleoperation(Node):
             (self._last_frame_time is None or now - self._last_frame_time > self._frame_timeout)
             and not self._failsafe_published
         ):
-            self._publish(0.0, 0.0, [0.0] * 4)
+            self._publish(0.0, 0.0)
             self._failsafe_published = True
             self.get_logger().warn("iBUS frame timeout: publishing zero motor levels")
 
